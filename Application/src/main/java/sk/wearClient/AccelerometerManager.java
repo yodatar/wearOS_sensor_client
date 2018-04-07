@@ -1,4 +1,4 @@
-package wearClient;
+package sk.wearClient;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -44,7 +44,7 @@ class AccelerometerManager {
     private static SensorManager sensorManager;
     // you could use an OrientationListener array instead
 // if you plans to use more than one listener
-    private static AccelerometerListener listener;
+    private static wearClient.AccelerometerListener listener;
 
     /**
      * indicates whether or not Accelerometer Sensor is supported
@@ -115,7 +115,7 @@ class AccelerometerManager {
      *
      * @param accelerometerListener callback for accelerometer events
      */
-    public static void startListening(AccelerometerListener accelerometerListener) {
+    public static void startListening(wearClient.AccelerometerListener accelerometerListener) {
         //configure(threshold, interval);
 
         sensorManager = (SensorManager) context.

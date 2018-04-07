@@ -1,4 +1,4 @@
-package wearClient;
+package sk.wearClient;
 
 import android.app.Activity;
 import android.hardware.Sensor;

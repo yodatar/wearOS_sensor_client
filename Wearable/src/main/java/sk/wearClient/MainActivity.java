@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package wearClient;
+package sk.wearClient;
 
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.wearable.view.DotsPageIndicator;
 import android.support.wearable.view.FragmentGridPagerAdapter;
@@ -35,38 +32,29 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.wearable.datalayer.R;
-import com.example.android.wearable.wearClient.fragments.AssetFragment;
-import com.example.android.wearable.wearClient.fragments.DataFragment;
-import com.example.android.wearable.wearClient.fragments.DiscoveryFragment;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.CapabilityClient;
 import com.google.android.gms.wearable.CapabilityInfo;
 import com.google.android.gms.wearable.DataClient;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
-import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.MessageClient;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+
+import sk.wearClient.fragments.AssetFragment;
+
 
 
 /**
@@ -94,7 +82,7 @@ public class MainActivity extends Activity implements
     private static final String DATA_ITEM_RECEIVED_PATH = "/data-item-received";
 
     private GridViewPager mPager;
-    private DataFragment mDataFragment;
+    private wearClient.fragments.DataFragment mDataFragment;
     private AssetFragment mAssetFragment;
 
     GoogleApiClient mGoogleApiClient;
@@ -315,9 +303,9 @@ public class MainActivity extends Activity implements
         DotsPageIndicator dotsPageIndicator = (DotsPageIndicator) findViewById(R.id.page_indicator);
         dotsPageIndicator.setDotSpacing((int) getResources().getDimension(R.dimen.dots_spacing));
         dotsPageIndicator.setPager(mPager);
-        mDataFragment = new DataFragment();
+        mDataFragment = new wearClient.fragments.DataFragment();
         mAssetFragment = new AssetFragment();
-        DiscoveryFragment discoveryFragment = new DiscoveryFragment();
+        wearClient.fragments.DiscoveryFragment discoveryFragment = new wearClient.fragments.DiscoveryFragment();
         List<Fragment> pages = new ArrayList<>();
         pages.add(mDataFragment);
         pages.add(mAssetFragment);

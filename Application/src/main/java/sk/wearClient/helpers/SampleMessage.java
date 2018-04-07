@@ -1,4 +1,5 @@
-package com.example.android.wearable.wearClient.helpers;
+package sk.wearClient.helpers;
+
 
 import com.google.gson.GsonBuilder;
 

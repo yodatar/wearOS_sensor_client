@@ -1,4 +1,4 @@
-package com.example.android.wearable.wearClient.helpers;
+package sk.wearClient.helpers;
 
 import android.graphics.Color;
 import android.graphics.Typeface;

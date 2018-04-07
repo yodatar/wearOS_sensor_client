@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.wearable.wearClient.fragments;
+package sk.wearClient.fragments;
 
 import android.app.Fragment;
 import android.content.Context;
@@ -27,8 +27,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.android.wearable.datalayer.R;
-import com.example.android.wearable.wearClient.R;
+import sk.wearClient.R;
+
 
 /**
  * A fragment that shows a list of DataItems received from the phone

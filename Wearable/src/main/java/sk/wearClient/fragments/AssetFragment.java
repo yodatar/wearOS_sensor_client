@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.wearable.datalayer.fragments;
+package sk.wearClient.fragments;
 
 import android.app.Fragment;
 import android.graphics.Bitmap;
@@ -24,26 +24,32 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
-import com.example.android.wearable.datalayer.R;
+import sk.wearClient.R;
+
 
 /**
  * A simple fragment that shows a (photo) asset received from the phone.
  */
 public class AssetFragment extends Fragment {
 
-    private ImageView mPhoto;
+    private TextView mTextView;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.asset_fragment, container, false);
-        mPhoto = (ImageView) view.findViewById(R.id.photo);
+        mTextView = (TextView) view.findViewById(R.id.text);
+
         return view;
     }
 
-    public void setBackgroundImage(Bitmap bitmap) {
-        mPhoto.setImageBitmap(bitmap);
+    public void setText(String s) {
+        if(mTextView != null) {
+            mTextView.setText(s);
+        }
     }
+
 }

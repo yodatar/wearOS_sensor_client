@@ -56,7 +56,7 @@ import sk.wearClient.helpers.MqttHelper;
 
 
 public class MainActivity extends Activity implements
-        wearClient.AccelerometerListener,
+        AccelerometerListener,
         DataClient.OnDataChangedListener,
         MessageClient.OnMessageReceivedListener,
         CapabilityClient.OnCapabilityChangedListener {
@@ -120,7 +120,7 @@ public class MainActivity extends Activity implements
 
         //mGeneratorExecutor = new ScheduledThreadPoolExecutor(1);
 
-        final wearClient.AccelerometerListener accelerometerListener = this;
+        final AccelerometerListener accelerometerListener = (AccelerometerListener) this;
 
 
         ipAddress = (EditText) findViewById(R.id.ipField);
@@ -166,29 +166,29 @@ public class MainActivity extends Activity implements
         });
 
         sampleRateSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                                                      @Override
-                                                      public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                                                          AccelerometerManager.setInterval(i*1000);
-                                                          //AccelerometerManager.stopListening();
-                                                          //AccelerometerManager.startListening(accelerometerListener);
-                                                      }
-                                                      @Override
-                                                      public void onStartTrackingTouch(SeekBar seekBar) {   }
-                                                      @Override
-                                                      public void onStopTrackingTouch(SeekBar seekBar) {   }
-                                                  }
+              @Override
+              public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                  AccelerometerManager.setInterval(i*1000);
+                  //AccelerometerManager.stopListening();
+                  //AccelerometerManager.startListening(accelerometerListener);
+              }
+              @Override
+              public void onStartTrackingTouch(SeekBar seekBar) {   }
+              @Override
+              public void onStopTrackingTouch(SeekBar seekBar) {   }
+            }
         );
 
         thresholdSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                                                     @Override
-                                                     public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                                                         AccelerometerManager.setThreshold(i);
-                                                     }
-                                                     @Override
-                                                     public void onStartTrackingTouch(SeekBar seekBar) {   }
-                                                     @Override
-                                                     public void onStopTrackingTouch(SeekBar seekBar) {   }
-                                                 }
+             @Override
+             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                 AccelerometerManager.setThreshold(i);
+             }
+             @Override
+             public void onStartTrackingTouch(SeekBar seekBar) {   }
+             @Override
+             public void onStopTrackingTouch(SeekBar seekBar) {   }
+         }
         );
 
 
@@ -240,9 +240,7 @@ public class MainActivity extends Activity implements
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 
-        }
     }
 
 
@@ -269,14 +267,15 @@ public class MainActivity extends Activity implements
 
     @Override
     public void onMessageReceived(final MessageEvent messageEvent) {
+        String msg = "";
         try {
-            Log.w(TAG, "onMessageReceived()"
-                    + new String(messageEvent.getData(), "UTF-8")  + " " + messageEvent.getPath());
+            msg = new String(messageEvent.getData(), "UTF-8");
+            Log.w(TAG, "onMessageReceived() "+ messageEvent.getPath() + " " + msg);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
-        mDataItemListAdapter.add(new Event("Message from watch: ", messageEvent.getPath() + messageEvent.toString()));
+        mDataItemListAdapter.add(new Event(messageEvent.getPath(), msg ));
     }
 
     @Override
@@ -497,7 +496,6 @@ private void sendPhoto(Asset asset) {
         sampleMessage.setValues(x,y,z, time, messageId, clientId.getText().toString());
     }
 
-    @Override
     public void recordingStopped() {
         if (mqttHelper != null && mqttHelper.mqttAndroidClient.isConnected()) {
             // publish sample
@@ -527,7 +525,7 @@ private void sendPhoto(Asset asset) {
             public void connectComplete(boolean b, String s) {
                 Log.w("connectComplete", "Connected: " + s);
                 mqttToggle.setChecked(true);
-                dataReceived.setText("Connected");
+                dataReceived.setText("MQTT: Connected");
             }
 
             @Override
@@ -556,7 +554,7 @@ private void sendPhoto(Asset asset) {
             Log.w("mqtt", "Closing Connection");
             try {
                 mqttHelper.mqttAndroidClient.disconnect();
-                dataReceived.setText("Disconnected");
+                dataReceived.setText("MQTT: Disconnected");
             } catch (MqttException e) {
                 e.printStackTrace();
             }

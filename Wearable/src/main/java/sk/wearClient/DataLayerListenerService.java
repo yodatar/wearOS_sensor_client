@@ -41,8 +41,6 @@ public class DataLayerListenerService extends WearableListenerService {
 
     private static final String START_ACTIVITY_PATH = "/start-activity";
     public static final String COUNT_PATH = "/count";
-    public static final String IMAGE_PATH = "/image";
-    public static final String IMAGE_KEY = "photo";
 
     @Override
     public void onCreate() {
@@ -61,9 +59,9 @@ public class DataLayerListenerService extends WearableListenerService {
 
         // Check to see if the message is to start an activity
         if (messageEvent.getPath().equals(START_ACTIVITY_PATH)) {
-          /*  Intent startIntent = new Intent(this, MainActivity.class);
+            Intent startIntent = new Intent(this, MainActivity.class);
             startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(startIntent);*/
+            startActivity(startIntent);
         }
     }
 }

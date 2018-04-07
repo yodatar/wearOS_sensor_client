@@ -35,13 +35,15 @@ import sk.wearClient.R;
 public class AssetFragment extends Fragment {
 
     private TextView mTextView;
+    private TextView messageId;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.asset_fragment, container, false);
-        mTextView = (TextView) view.findViewById(R.id.text);
+        mTextView = view.findViewById(R.id.text);
+        messageId = view.findViewById(R.id.messageId);
 
         return view;
     }
@@ -52,4 +54,10 @@ public class AssetFragment extends Fragment {
         }
     }
 
+    public void setMessageId(String id) {
+        if(mTextView != null) {
+            mTextView.setText(id);
+
+        }
+    }
 }

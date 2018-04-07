@@ -28,4 +28,11 @@
         android:layout_height="match_parent"
         android:text="TextView"
         android:textAlignment="center" />
+
+    <TextView
+        android:id="@+id/messageId"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="TextView"
+        android:textAlignment="center" />
 </LinearLayout>

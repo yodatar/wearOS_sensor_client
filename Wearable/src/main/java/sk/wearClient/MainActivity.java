@@ -32,6 +32,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -47,14 +48,16 @@ import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import sk.wearClient.fragments.AssetFragment;
-
+import sk.wearClient.helpers.SampleMessage;
 
 
 /**
@@ -82,7 +85,7 @@ public class MainActivity extends Activity implements
     private static final String DATA_ITEM_RECEIVED_PATH = "/data-item-received";
 
     private GridViewPager mPager;
-    private wearClient.fragments.DataFragment mDataFragment;
+    private sk.wearClient.fragments.DataFragment mDataFragment;
     private AssetFragment mAssetFragment;
 
     GoogleApiClient mGoogleApiClient;
@@ -93,7 +96,9 @@ public class MainActivity extends Activity implements
     private HashSet<Node> nodes;
     private Node node;
     boolean isCaptured = false;
+    private SampleMessage sampleMessage;
 
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -103,6 +108,7 @@ public class MainActivity extends Activity implements
         setupViews();
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sampleMessage = new SampleMessage();
 
         //write out to the log all the sensors the device has.
         sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
@@ -172,19 +178,17 @@ public class MainActivity extends Activity implements
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 String path = event.getDataItem().getUri().getPath();
 
-                if (DataLayerListenerService.IMAGE_PATH.equals(path)) {
-
-                } else if (DataLayerListenerService.COUNT_PATH.equals(path)) {
+             if (DataLayerListenerService.COUNT_PATH.equals(path)) {
                     Log.d(TAG, "Data Changed for COUNT_PATH");
                     mDataFragment.appendItem("DataItem Changed", event.getDataItem().toString());
 
-
+                    /*
                     byte[] payload = event.getDataItem().getUri().toString().getBytes();
 
                     if(node != null) {
-                       // Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH, payload);
+                        Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH, payload);
                     }
-
+                    */
 
                 } else {
                     Log.d(TAG, "Unrecognized path: " + path);
@@ -303,16 +307,36 @@ public class MainActivity extends Activity implements
         DotsPageIndicator dotsPageIndicator = (DotsPageIndicator) findViewById(R.id.page_indicator);
         dotsPageIndicator.setDotSpacing((int) getResources().getDimension(R.dimen.dots_spacing));
         dotsPageIndicator.setPager(mPager);
-        mDataFragment = new wearClient.fragments.DataFragment();
+        mDataFragment = new sk.wearClient.fragments.DataFragment();
         mAssetFragment = new AssetFragment();
-        wearClient.fragments.DiscoveryFragment discoveryFragment = new wearClient.fragments.DiscoveryFragment();
+        sk.wearClient.fragments.DiscoveryFragment discoveryFragment = new sk.wearClient.fragments.DiscoveryFragment();
         List<Fragment> pages = new ArrayList<>();
         pages.add(mDataFragment);
         pages.add(mAssetFragment);
         pages.add(discoveryFragment);
         final MyPagerAdapter adapter = new MyPagerAdapter(getFragmentManager(), pages);
         mPager.setAdapter(adapter);
+
     }
+
+
+    private void onAccelerationChanged(float x, float y, float z, long time) {
+        /*
+        Date timestamp = new Date(time/1000000);
+        float[] record = {x,y,z};
+        mChart.addEntryToChart(record, timestamp);
+        */
+    }
+
+    private void onShaking(float x, float y, float z, long time, long messageId) {
+        //Date timestamp = new Date(time);
+
+        // TODO: create separate helper
+        sampleMessage.setValues(x,y,z, time, messageId, "smartwatch");
+    }
+
+
+
 
     private class MyPagerAdapter extends FragmentGridPagerAdapter {
 
@@ -345,9 +369,24 @@ public class MainActivity extends Activity implements
             Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH,
                     payload.getBytes());
             isCaptured = true;
-            Log.wtf(TAG,"isCaptured: " + payload);
+            Log.e("sendSample","payload: " + payload);
         }
     }
+
+
+
+    private long now = 0;
+    private long timeDiff = 0;
+    private long lastUpdate = 0;
+    private long lastShake = 0;
+
+    private float x = 0;
+    private float y = 0;
+    private float z = 0;
+    private float lastX = 0;
+    private float lastY = 0;
+    private float lastZ = 0;
+    private float force = 0;
 
     void registerSensor() {
 
@@ -361,6 +400,28 @@ public class MainActivity extends Activity implements
 
         listener = new SensorEventListener() {
 
+            private void recordingStopped() {
+                if(node != null) {
+                    // publish sample
+                    Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH,
+                            sampleMessage.toString().getBytes());
+                    // String.valueOf(sampleMessage.getId())
+
+                    Log.wtf(TAG,"isCaptured: " + sampleMessage.toString());
+
+
+                    // display on UI
+                    mAssetFragment.setMessageId(sdf.format(new Date(sampleMessage.getId())));
+
+                    // flush current sample
+                    sampleMessage.clear();
+                }
+            }
+
+            public boolean recording;
+
+            private float threshold = 5f; // accelerometer force threshold
+
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
                 // I have no desire to deal with the accuracy events
@@ -373,16 +434,84 @@ public class MainActivity extends Activity implements
                     String msg = " x: "+String.valueOf(event.values[0]) +
                             "\n y: "+String.valueOf(event.values[1]) +
                             "\n z: "+String.valueOf(event.values[2]) +
-                            "\n 3: " + String.valueOf(event.values[3]) +    //for the TYPE_ROTATION_VECTOR these 2 exist.
-                            "\n 4: " + String.valueOf(event.values[4]);
+                            "\n T: "+String.valueOf(event.timestamp);// +
+                            //"\n 3: " + String.valueOf(event.values[3]) +    //for the TYPE_ROTATION_VECTOR these 2 exist.
+                            //"\n 4: " + String.valueOf(event.values[4]);
                     mAssetFragment.setText(msg);
 
+
                     sendSample(msg);
+
+
+
+                    now = System.currentTimeMillis();
+
+                    x = event.values[0];
+                    y = event.values[1];
+                    z = event.values[2];
+
+                    // if not interesting in shake events
+                    // just remove the whole if then else block
+                    if (lastUpdate == 0) {
+                        lastUpdate = now;
+                        lastShake = now;
+                        lastX = x;
+                        lastY = y;
+                        lastZ = z;
+                    } else {
+                        timeDiff = now - lastUpdate;
+
+                        if (timeDiff > 0) {
+
+                            force = Math.abs(x + y + z - lastX - lastY - lastZ);
+
+                            // If threshold triggered
+                            if (Float.compare(force, threshold) > 0) {
+
+                                if (!recording) {
+                                    // trigger shake event
+                                    Log.w("Debug", "timeDiff: " + (now - lastShake));
+                                    lastShake = now;
+                                    recording = true;
+
+                                } else {
+                                    //Toast.makeText(context, "No Motion detected",Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                            Long shakeDiff= (now - lastShake); // 1000000;
+
+                            // in milliseconds
+                            // recording for 2 seconds
+                            if (shakeDiff > 3000 && recording) {
+                                recording = false;
+                                //
+                                recordingStopped();
+                            }
+
+                            if (recording) {
+                                onShaking(x, y, z, now, lastShake);
+                            }
+
+                            lastX = x;
+                            lastY = y;
+                            lastZ = z;
+                            lastUpdate = now;
+
+                        } else {
+                            //Toast.makeText(context, "No Motion detected", Toast.LENGTH_SHORT).show();
+                            //Log.w("Debug", "No Motion detected");
+
+                        }
+
+                        //listener.onAccelerationChanged(x, y, z, now);
+
+                    }
                 }
             }
         };
 
-        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);
 
 
 /*

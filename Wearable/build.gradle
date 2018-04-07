@@ -21,14 +21,13 @@ repositories {
 
 dependencies {
 
-
-
     compile 'com.google.android.gms:play-services-wearable:11.8.0'
     compile 'com.android.support:support-v13:27.1.0'
 
     provided 'com.google.android.wearable:wearable:2.3.0'
 
     compile 'com.google.android.support:wearable:2.3.0'
+    compile 'com.google.code.gson:gson:2.8.2'
 
 }
 

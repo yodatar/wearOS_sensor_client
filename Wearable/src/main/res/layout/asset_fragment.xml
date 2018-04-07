@@ -16,14 +16,16 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/layout"
-    android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_height="fill_parent"
+    android:gravity="center_horizontal|center"
+    android:orientation="vertical"
+    android:background="@color/black">
 
-    <ImageView
-        android:id="@+id/photo"
-        android:scaleType="centerCrop"
-        android:src="@drawable/photo_placeholder"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent" />
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="TextView"
+        android:textAlignment="center" />
 </LinearLayout>

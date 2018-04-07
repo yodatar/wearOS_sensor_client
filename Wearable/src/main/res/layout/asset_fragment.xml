@@ -14,25 +14,32 @@
      limitations under the License.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/layout"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/accLayout"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:gravity="center_horizontal|center"
-    android:orientation="vertical"
-    android:background="@color/black">
+    android:background="@color/black"
+    android:gravity="center_horizontal|center">
 
     <TextView
         android:id="@+id/text"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="TextView"
-        android:textAlignment="center" />
+        android:layout_width="120dp"
+        android:layout_height="75dp"
+        android:layout_alignEnd="@+id/messageId"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="26dp"
+        android:text="accelerometer"
+        android:textAlignment="textStart" />
 
     <TextView
         android:id="@+id/messageId"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="TextView"
-        android:textAlignment="center" />
-</LinearLayout>
+        android:layout_width="176dp"
+        android:layout_height="78dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="25dp"
+        android:gravity="center"
+        android:text="messageId"
+        android:textAlignment="center"
+        android:textSize="21sp" />
+</RelativeLayout>

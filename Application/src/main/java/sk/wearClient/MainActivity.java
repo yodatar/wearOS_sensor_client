@@ -275,7 +275,9 @@ public class MainActivity extends Activity implements
             e.printStackTrace();
         }
 
-        mDataItemListAdapter.add(new Event(messageEvent.getPath(), msg ));
+        mDataItemListAdapter.add(new Event(messageEvent.getPath(), msg.substring(0,43) ));
+
+        finalizeSampleMessage(msg);
     }
 
     @Override
@@ -375,6 +377,11 @@ private void sendPhoto(Asset asset) {
         }
 
         return results;
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
+
     }
 
 
@@ -496,16 +503,21 @@ private void sendPhoto(Asset asset) {
         sampleMessage.setValues(x,y,z, time, messageId, clientId.getText().toString());
     }
 
-    public void recordingStopped() {
+    public void finalizeSampleMessage(String msg) {
         if (mqttHelper != null && mqttHelper.mqttAndroidClient.isConnected()) {
             // publish sample
-            mqttHelper.publishMessage(sampleMessage.toString(), String.valueOf(sampleMessage.getId()));
+            if(msg != null) {
+                mqttHelper.publishMessage(msg, null);
+            } else {
+                mqttHelper.publishMessage(sampleMessage.toString(), String.valueOf(sampleMessage.getId()));
 
-            // display on UI
-            messageId.setText(sdf.format(new Date(sampleMessage.getId())));
+                // display on UI
+                messageId.setText(sdf.format(new Date(sampleMessage.getId())));
 
-            // flush current sample
-            sampleMessage.clear();
+                // flush current sample
+                sampleMessage.clear();
+            }
+
         }
     }
 

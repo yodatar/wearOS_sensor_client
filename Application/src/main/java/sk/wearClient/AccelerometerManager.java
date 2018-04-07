@@ -208,7 +208,7 @@ class AccelerometerManager {
                     if (shakeDiff > 3000 && recording) {
                         recording = false;
                         //
-                        listener.recordingStopped();
+                        listener.finalizeSampleMessage(null);
                     }
 
                     if (recording) {

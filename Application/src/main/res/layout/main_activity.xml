@@ -78,7 +78,7 @@
             android:id="@+id/accelerationToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="236dp"
+            android:layout_marginLeft="216dp"
             android:checked="true"
             android:text="Accelerometer"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -140,7 +140,7 @@
             android:id="@+id/mqttToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="236dp"
+            android:layout_marginLeft="216dp"
             android:layout_marginTop="16dp"
             android:text="ToggleButton"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -148,8 +148,8 @@
 
         <TextView
             android:id="@+id/messageId"
-            android:layout_width="290dp"
-            android:layout_height="35dp"
+            android:layout_width="247dp"
+            android:layout_height="29dp"
             android:layout_marginLeft="60dp"
             android:layout_marginTop="8dp"
             android:gravity="center"
@@ -173,25 +173,25 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/divider" />
 
-        <ListView
-            android:id="@+id/data_item_list"
-            android:layout_width="344dp"
-            android:layout_height="97dp"
-            android:layout_below="@+id/start_wearable_activity"
-            android:layout_marginTop="4dp"
-            android:textSize="20sp"
-            android:transcriptMode="alwaysScroll"
-            app:layout_constraintTop_toBottomOf="@+id/start_wearable_activity"
-            tools:layout_editor_absoluteX="51dp" />
-
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart"
-            android:layout_width="388dp"
-            android:layout_height="175dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_width="327dp"
+            android:layout_height="134dp"
+            android:layout_marginStart="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/messageId" />
+
+        <ListView
+            android:id="@+id/data_item_list"
+            android:layout_width="272dp"
+            android:layout_height="63dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="48dp"
+            android:textSize="20sp"
+            android:transcriptMode="alwaysScroll"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/start_wearable_activity" />
 
     </android.support.constraint.ConstraintLayout>
 

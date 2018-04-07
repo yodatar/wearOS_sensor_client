@@ -26,25 +26,5 @@
         android:visibility="invisible"
         android:layout_centerVertical="true" />
 
-    <Button
-        android:id="@+id/capability_2_btn"
-        android:text="@string/capability_2_notification"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/center"
-        android:layout_centerHorizontal="true"
-        android:textSize="12sp"
-        android:onClick="onClicked" />
-
-    <Button
-        android:id="@+id/capabilities_1_and_2_btn"
-        android:text="@string/capabilities_1_and_2_notification"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/center"
-        android:textSize="10sp"
-        android:layout_alignEnd="@+id/capability_2_btn"
-        android:layout_alignStart="@+id/capability_2_btn"
-        android:onClick="onClicked" />
 
 </RelativeLayout>

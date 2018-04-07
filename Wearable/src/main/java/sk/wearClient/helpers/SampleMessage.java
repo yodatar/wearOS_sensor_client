@@ -4,6 +4,8 @@ package sk.wearClient.helpers;
 
 import com.google.gson.GsonBuilder;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +35,24 @@ public class SampleMessage {
         this.id = id;
         this.clientId = clientId;
     }
+
+/*
+    public setSampleMessage(String msg) {
+        if (msg != null){
+            clear();
+
+            new GsonBuilder().
+
+            this.x.add(x);
+            this.y.add(y);
+            this.z.add(z);
+            this.time.add(timestamp);
+            this.id = id;
+            this.clientId = clientId;
+        }
+
+    }
+*/
 
     @Override
     public String toString() {

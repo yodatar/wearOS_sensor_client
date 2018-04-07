@@ -124,7 +124,9 @@ public class MqttHelper {
         try {
             MqttMessage message = new MqttMessage();
             message.setPayload(payload.getBytes());
-            message.setId(Integer.parseInt(id.substring(0,9)));
+            if (id != null) {
+                message.setId(Integer.parseInt(id.substring(0,9)));
+            }
             mqttAndroidClient.publish("data/acc", message);
             //Log.w("Mqtt", "Message Published. Id: " + id);
 //            if(!mqttAndroidClient.isConnected()){

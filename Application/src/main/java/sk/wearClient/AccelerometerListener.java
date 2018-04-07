@@ -7,5 +7,6 @@ public interface AccelerometerListener {
 
      void onShaking(float x, float y, float z, long time, long id);
 
-     void recordingStopped();
+     void finalizeSampleMessage(String msg);
+
 }

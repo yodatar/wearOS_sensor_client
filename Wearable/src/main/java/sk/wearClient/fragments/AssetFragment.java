@@ -18,12 +18,14 @@ package sk.wearClient.fragments;
 
 import android.app.Fragment;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import sk.wearClient.R;
@@ -36,14 +38,17 @@ public class AssetFragment extends Fragment {
 
     private TextView mTextView;
     private TextView messageId;
+    private RelativeLayout accLayout;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.asset_fragment, container, false);
+
         mTextView = view.findViewById(R.id.text);
         messageId = view.findViewById(R.id.messageId);
+        accLayout = (RelativeLayout) view.findViewById(R.id.accLayout);
 
         return view;
     }
@@ -55,9 +60,14 @@ public class AssetFragment extends Fragment {
     }
 
     public void setMessageId(String id) {
-        if(mTextView != null) {
-            mTextView.setText(id);
+        if(messageId != null) {
+            messageId.setText(id);
+        }
+    }
 
+    public void setBackground(int color) {
+        if(accLayout != null) {
+            accLayout.setBackgroundColor(color);
         }
     }
 }

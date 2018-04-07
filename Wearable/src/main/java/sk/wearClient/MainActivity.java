@@ -19,6 +19,7 @@ package sk.wearClient;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -28,11 +29,8 @@ import android.os.Bundle;
 import android.support.wearable.view.DotsPageIndicator;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
-import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -54,26 +52,13 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import sk.wearClient.fragments.AssetFragment;
+import sk.wearClient.fragments.DataFragment;
+import sk.wearClient.fragments.DiscoveryFragment;
 import sk.wearClient.helpers.SampleMessage;
 
 
-/**
- * The main activity with a view pager, containing three pages:<p/>
- * <ul>
- * <li>
- * Page 1: shows a list of DataItems received from the phone application
- * </li>
- * <li>
- * Page 2: shows the photo that is sent from the phone application
- * </li>
- * <li>
- * Page 3: includes two buttons to show the connected phone and watch devices
- * </li>
- * </ul>
- */
 public class MainActivity extends Activity implements
         DataClient.OnDataChangedListener,
         MessageClient.OnMessageReceivedListener,
@@ -87,6 +72,7 @@ public class MainActivity extends Activity implements
     private GridViewPager mPager;
     private sk.wearClient.fragments.DataFragment mDataFragment;
     private AssetFragment mAssetFragment;
+    private DiscoveryFragment discoveryFragment;
 
     GoogleApiClient mGoogleApiClient;
     private SensorManager sensorManager;
@@ -202,19 +188,6 @@ public class MainActivity extends Activity implements
         }
     }
 
-    public void onClicked(View view) {
-        switch (view.getId()) {
-            case R.id.capability_2_btn:
-                showNodes(CAPABILITY_2_NAME);
-                break;
-            case R.id.capabilities_1_and_2_btn:
-                showNodes(CAPABILITY_1_NAME, CAPABILITY_2_NAME);
-                break;
-            default:
-                Log.e(TAG, "Unknown click event registered");
-        }
-    }
-
     @Override
     public void onMessageReceived(MessageEvent event) {
         Log.d(TAG, "onMessageReceived: " + event);
@@ -256,50 +229,6 @@ public class MainActivity extends Activity implements
         }
     }
 
-    private void showNodes(final String... capabilityNames) {
-
-        Task<Map<String, CapabilityInfo>> capabilitiesTask =
-                Wearable.getCapabilityClient(this)
-                        .getAllCapabilities(CapabilityClient.FILTER_REACHABLE);
-
-        capabilitiesTask.addOnSuccessListener(new OnSuccessListener<Map<String, CapabilityInfo>>() {
-            @Override
-            public void onSuccess(Map<String, CapabilityInfo> capabilityInfoMap) {
-                nodes = new HashSet<>();
-
-                if (capabilityInfoMap.isEmpty()) {
-                    showDiscoveredNodes(nodes);
-                    return;
-                }
-                for (String capabilityName : capabilityNames) {
-                    CapabilityInfo capabilityInfo = capabilityInfoMap.get(capabilityName);
-                    if (capabilityInfo != null) {
-                        nodes.addAll(capabilityInfo.getNodes());
-                    }
-                }
-                showDiscoveredNodes(nodes);
-            }
-        });
-    }
-
-    private void showDiscoveredNodes(Set<Node> nodes) {
-        List<String> nodesList = new ArrayList<>();
-        for (Node node : nodes) {
-            nodesList.add(node.getDisplayName());
-            this.node = node;
-        }
-        Log.w(TAG, "Connected Nodes: " + (nodesList.isEmpty()
-                ? "No connected device was found for the given capabilities"
-                : TextUtils.join(",", nodesList)));
-        String msg;
-        if (!nodesList.isEmpty()) {
-            msg = getString(R.string.connected_nodes,
-                    TextUtils.join(", ", nodesList));
-        } else {
-            msg = getString(R.string.no_device);
-        }
-        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
-    }
 
     private void setupViews() {
         mPager = (GridViewPager) findViewById(R.id.pager);
@@ -307,12 +236,12 @@ public class MainActivity extends Activity implements
         DotsPageIndicator dotsPageIndicator = (DotsPageIndicator) findViewById(R.id.page_indicator);
         dotsPageIndicator.setDotSpacing((int) getResources().getDimension(R.dimen.dots_spacing));
         dotsPageIndicator.setPager(mPager);
-        mDataFragment = new sk.wearClient.fragments.DataFragment();
         mAssetFragment = new AssetFragment();
-        sk.wearClient.fragments.DiscoveryFragment discoveryFragment = new sk.wearClient.fragments.DiscoveryFragment();
+        mDataFragment = new DataFragment();
+        discoveryFragment = new DiscoveryFragment();
         List<Fragment> pages = new ArrayList<>();
-        pages.add(mDataFragment);
         pages.add(mAssetFragment);
+        pages.add(mDataFragment);
         pages.add(discoveryFragment);
         final MyPagerAdapter adapter = new MyPagerAdapter(getFragmentManager(), pages);
         mPager.setAdapter(adapter);
@@ -364,16 +293,6 @@ public class MainActivity extends Activity implements
 
     }
 
-    private void sendSample(String payload) {
-        if(node != null && !isCaptured) {
-            Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH,
-                    payload.getBytes());
-            isCaptured = true;
-            Log.e("sendSample","payload: " + payload);
-        }
-    }
-
-
 
     private long now = 0;
     private long timeDiff = 0;
@@ -400,23 +319,7 @@ public class MainActivity extends Activity implements
 
         listener = new SensorEventListener() {
 
-            private void recordingStopped() {
-                if(node != null) {
-                    // publish sample
-                    Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH,
-                            sampleMessage.toString().getBytes());
-                    // String.valueOf(sampleMessage.getId())
 
-                    Log.wtf(TAG,"isCaptured: " + sampleMessage.toString());
-
-
-                    // display on UI
-                    mAssetFragment.setMessageId(sdf.format(new Date(sampleMessage.getId())));
-
-                    // flush current sample
-                    sampleMessage.clear();
-                }
-            }
 
             public boolean recording;
 
@@ -438,10 +341,6 @@ public class MainActivity extends Activity implements
                             //"\n 3: " + String.valueOf(event.values[3]) +    //for the TYPE_ROTATION_VECTOR these 2 exist.
                             //"\n 4: " + String.valueOf(event.values[4]);
                     mAssetFragment.setText(msg);
-
-
-                    sendSample(msg);
-
 
 
                     now = System.currentTimeMillis();
@@ -473,6 +372,7 @@ public class MainActivity extends Activity implements
                                     Log.w("Debug", "timeDiff: " + (now - lastShake));
                                     lastShake = now;
                                     recording = true;
+                                    mAssetFragment.setBackground(Color.GREEN);
 
                                 } else {
                                     //Toast.makeText(context, "No Motion detected",Toast.LENGTH_SHORT).show();
@@ -485,8 +385,9 @@ public class MainActivity extends Activity implements
                             // recording for 2 seconds
                             if (shakeDiff > 3000 && recording) {
                                 recording = false;
+                                mAssetFragment.setBackground(Color.BLACK);
                                 //
-                                recordingStopped();
+                                finalizeSampleMessage();
                             }
 
                             if (recording) {
@@ -509,9 +410,29 @@ public class MainActivity extends Activity implements
                     }
                 }
             }
+
+
+            private void finalizeSampleMessage() {
+                if(node != null) {
+                    // publish sample
+                    Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH,
+                            sampleMessage.toString().getBytes());
+                    // String.valueOf(sampleMessage.getId())
+
+                    Log.wtf("finalizeSampleMessage()", sampleMessage.toString());
+
+
+                    // display on UI
+                    mAssetFragment.setMessageId(sdf.format(new Date(sampleMessage.getId())));
+
+                    // flush current sample
+                    sampleMessage.clear();
+                }
+            }
         };
 
-        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI);
+        // DELAY
+        sensorManager.registerListener(listener, sensor, 20000);
 
 
 /*

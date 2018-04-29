@@ -58,7 +58,7 @@
             android:layout_marginTop="12dp"
             android:gravity="center_vertical|center"
             android:inputType="textPersonName"
-            android:text="phone"
+            android:text="pali@michalek.it"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/divider" />

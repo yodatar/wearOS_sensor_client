@@ -19,6 +19,7 @@ import sk.wearClient.helpers.SampleMessage;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static android.content.Context.VIBRATOR_SERVICE;
+import static android.hardware.SensorManager.SENSOR_DELAY_UI;
 
 public class AccelerometerManager {
 
@@ -29,7 +30,7 @@ public class AccelerometerManager {
     private SampleMessage sampleMessage;
 
 
-    private final int interval = 20000; // sample delay
+    private final int interval = 2000000000; // sample delay
     private final float threshold = 2f; // accelerometer force threshold
 
     private long now = 0;
@@ -44,6 +45,8 @@ public class AccelerometerManager {
     private long[] vibrationPattern = {100,100};
     private int recordingCounter;
     private boolean recording;
+    private long lastNow;
+    private int retarder;
 
 
     void registerSensor(MainActivity mainActivity) {
@@ -82,7 +85,7 @@ public class AccelerometerManager {
 
             @Override
             public void onSensorChanged(SensorEvent event) {
-                if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && retarder == 0) {
 
                     now = System.currentTimeMillis();
                     //now = TimeUnit.NANOSECONDS.toMicros(event.timestamp);
@@ -126,9 +129,13 @@ public class AccelerometerManager {
                      String msg = " x: " + String.valueOf(x) +
                         "\n y: " + String.valueOf(y) +
                         "\n z: " + String.valueOf(z) +
-                        "\n T: " + String.valueOf(now);
+                        "\n T: " + String.valueOf(now-lastNow);
                     MainActivity.getmAssetFragment().setText(msg);
+
+                    lastNow = now;
                 }
+                retarder++;
+                if(retarder > 3) retarder = 0;
             }
 
             private void startRecording() {

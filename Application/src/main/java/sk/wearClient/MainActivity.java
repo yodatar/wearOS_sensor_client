@@ -86,7 +86,7 @@ public class MainActivity extends Activity implements
     sk.wearClient.helpers.SampleMessage sampleMessage;
 
     TextView dataReceived;
-    TextView messageId;
+    public static TextView messageId;
 
     ToggleButton accelerationToggle;
     ToggleButton mqttToggle;
@@ -438,9 +438,6 @@ public class MainActivity extends Activity implements
 
                 // display on UI
                 messageId.setText(sdf.format(new Date(sampleMessage.getMessageId())));
-
-                // flush current sample
-                sampleMessage.clear();
             }
 
         }

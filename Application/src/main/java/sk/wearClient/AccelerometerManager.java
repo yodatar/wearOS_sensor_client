@@ -8,7 +8,10 @@ import android.hardware.SensorManager;
 import android.os.Vibrator;
 import android.util.Log;
 
+import java.text.BreakIterator;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import sk.wearClient.helpers.SampleMessage;
 
@@ -20,8 +23,8 @@ class AccelerometerManager {
     /**
      * Accuracy default configuration
      */
-    private static float threshold = 1.0f; // accelerometer force threshold
-    private static int interval = 20000;
+    private static float threshold = 0.5f; // accelerometer force threshold
+    private static int interval = 38000;
     private static SampleMessage sampleMessage;
 
     private static boolean recording;
@@ -89,9 +92,8 @@ class AccelerometerManager {
 
                 sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 
-// Get all sensors in device
-                List<Sensor> sensors = sensorManager.getSensorList(
-                        Sensor.TYPE_ACCELEROMETER);
+                // Get all sensors in device
+                List<Sensor> sensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
 
                 supported = new Boolean(sensors.size() > 0);
             } else {
@@ -133,6 +135,7 @@ class AccelerometerManager {
         }
     }
 
+    private static long lastNow;
     private static SensorEventListener sensorEventListener = new SensorEventListener() {
 
         private long now = 0;
@@ -191,13 +194,16 @@ class AccelerometerManager {
                     listener.onShaking(x,y,z,now);
                     recordingCounter++;
 
-                    if(recordingCounter > 80) {
+                    if(recordingCounter > 75) {
                         stopRecording();
                     }
                 }
 
                 // put in history
                 sampleMessage.insertValues(x,y,z);
+                //MainActivity.messageId.setText(String.valueOf(now-lastNow));
+                //lastNow = now;
+
             }
         }
 

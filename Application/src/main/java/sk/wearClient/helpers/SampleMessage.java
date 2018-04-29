@@ -1,36 +1,69 @@
 package sk.wearClient.helpers;
 
-
 import com.google.gson.GsonBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 public class SampleMessage {
-    private List<Float> x;
-    private List<Float> y;
-    private List<Float> z;
-    private List<Long> time;
-    private long id;
+
+    public static String CLIENT_ID = "pali@michalek.it";
+    private CircularFifoQueue<Float> x;
+    private CircularFifoQueue<Float> y;
+    private CircularFifoQueue<Float> z;
+
+    private long messageId;
     private String clientId;
 
-    public SampleMessage() {
-        this.x = new ArrayList<>();
-        this.y = new ArrayList<>();
-        this.z = new ArrayList<>();
-        this.time = new ArrayList<>();
-        //this.clientId = MqttHelper.clientId;
+
+    private static SampleMessage instance = null;
+
+    private SampleMessage() {
+        this.x = new CircularFifoQueue<>(100);
+        this.y = new CircularFifoQueue<>(100);
+        this.z = new CircularFifoQueue<>(100);
+
+        this.clientId = CLIENT_ID;
     }
 
-    public void setValues(Float x, Float y, Float z, long timestamp, long id, String clientId) {
+    // singleton
+    public static SampleMessage getInstance() {
+        if(instance == null) {
+            instance = new SampleMessage();
+        }
+        return instance;
+    }
 
-        this.x.add(x);
-        this.y.add(y);
-        this.z.add(z);
-        this.time.add(timestamp);
-        this.id = id;
+
+    public void insertValues(Float x, Float y, Float z) {
+
+        this.x.offer(x);
+        this.y.offer(y);
+        this.z.offer(z);
+    }
+
+    public long getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(long messageId) {
+        this.messageId = messageId;
+    }
+
+    public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+    public void setClientId() {
+        this.clientId = CLIENT_ID;
+    }
+
+    public Float getLastX() {
+        return x.peek();
+    }
+    public Float getLastY() {
+        return y.peek();
+    }
+    public Float getLastZ() {
+        return z.peek();
     }
 
     @Override
@@ -42,11 +75,5 @@ public class SampleMessage {
         this.x.clear();
         this.y.clear();
         this.z.clear();
-        this.time.clear();
-        this.id = 0;
-    }
-
-    public long getId() {
-        return id;
     }
 }

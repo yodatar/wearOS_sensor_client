@@ -5,9 +5,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Vibrator;
 import android.util.Log;
 
 import java.util.List;
+
+import sk.wearClient.helpers.SampleMessage;
+
+import static android.content.Context.VIBRATOR_SERVICE;
 
 class AccelerometerManager {
 
@@ -15,14 +20,12 @@ class AccelerometerManager {
     /**
      * Accuracy default configuration
      */
-    private static float threshold = 5f; // accelerometer force threshold
+    private static float threshold = 1.0f; // accelerometer force threshold
     private static int interval = 20000;
+    private static SampleMessage sampleMessage;
 
-
-    //
     private static boolean recording;
-
-
+    private static int recordingCounter;
 
     public static float getThreshold() {
         return threshold;
@@ -42,8 +45,7 @@ class AccelerometerManager {
 
     private static Sensor sensor;
     private static SensorManager sensorManager;
-    // you could use an OrientationListener array instead
-// if you plans to use more than one listener
+
     private static AccelerometerListener listener;
 
     /**
@@ -72,6 +74,8 @@ class AccelerometerManager {
                 sensorManager.unregisterListener(sensorEventListener);
             }
         } catch (Exception e) {
+            Log.e("sensorManager", e.toString());
+
         }
     }
 
@@ -99,29 +103,15 @@ class AccelerometerManager {
         return supported;
     }
 
-    /**
-     * Configure the listener for shaking
-     *
-     * @param threshold minimum acceleration variation for considering shaking
-     * @param interval  minimum interval between to shake events
-     */
-    public static void configure(float threshold, int interval) {
-        AccelerometerManager.threshold = threshold;
-        AccelerometerManager.interval = interval;
-    }
 
-    /**
-     * Registers a listener and start listening
-     *
-     * @param accelerometerListener callback for accelerometer events
-     */
     public static void startListening(AccelerometerListener accelerometerListener) {
         //configure(threshold, interval);
+        sampleMessage = SampleMessage.getInstance();
 
         sensorManager = (SensorManager) context.
                 getSystemService(Context.SENSOR_SERVICE);
 
-// Take all sensors in device
+        // Take all sensors in device
         List<Sensor> sensors = sensorManager.getSensorList(
                 Sensor.TYPE_ACCELEROMETER);
 
@@ -129,11 +119,13 @@ class AccelerometerManager {
 
             sensor = sensors.get(0);
 
-// Register Accelerometer Listener
+            // Register Accelerometer Listener
             running = sensorManager.registerListener(
                     sensorEventListener, sensor, interval);
 
             if (running) {
+                Log.wtf("registerListener TYPE_ACCELEROMETER", "true");
+            } else {
 
             }
 
@@ -144,92 +136,88 @@ class AccelerometerManager {
     private static SensorEventListener sensorEventListener = new SensorEventListener() {
 
         private long now = 0;
-        private long timeDiff = 0;
-        private long lastUpdate = 0;
-        private long lastShake = 0;
-
         private float x = 0;
         private float y = 0;
         private float z = 0;
-        private float lastX = 0;
-        private float lastY = 0;
-        private float lastZ = 0;
         private float force = 0;
+
+        final int indexInPatternToRepeat = -1;
+        long[] vibrationPattern = {100,100};
 
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
         }
 
         public void onSensorChanged(SensorEvent event) {
-            // use the event timestamp as reference
-            // so the manager precision won't depends
-            // on the AccelerometerListener implementation
-            // processing time
+            final Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
 
-            //now = event.timestamp;
-            now = System.currentTimeMillis();
+            if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
-            x = event.values[0];
-            y = event.values[1];
-            z = event.values[2];
+                now = System.currentTimeMillis();
+                //now = TimeUnit.NANOSECONDS.toMicros(event.timestamp);
 
-            // if not interesting in shake events
-            // just remove the whole if then else block
-            if (lastUpdate == 0) {
-                lastUpdate = now;
-                lastShake = now;
-                lastX = x;
-                lastY = y;
-                lastZ = z;
-            } else {
-                timeDiff = now - lastUpdate;
+                // SWITCHED Y & X !!!
+                x = event.values[1];
+                y = event.values[0];
+                z = event.values[2];
 
-                if (timeDiff > 0) {
+                if (!recording) {
 
-                    force = Math.abs(x + y + z - lastX - lastY - lastZ);
+                    /**
+                     *  Behold, the Algorithm!
+                     */
+                    if ((y < -7) && (z > -2 && z < 2) && (x > -3 && x < 3)) {
 
-                    // If threshold triggered
-                    if (Float.compare(force, threshold) > 0) {
+                        try {
+                            force = Math.abs(x + y + z - sampleMessage.getLastX() - sampleMessage.getLastY() - sampleMessage.getLastZ());
 
-                        if (!recording) {
-                            // trigger shake event
-                            Log.w("Debug", "timeDiff: " + (now - lastShake));
-                            lastShake = now;
-                            recording = true;
+                        } catch (Exception e) {}
 
-                        } else {
-                            //Toast.makeText(context, "No Motion detected",Toast.LENGTH_SHORT).show();
+
+                        /**
+                         *  If threshold triggered
+                         */
+                        if (Float.compare(force, threshold) > 0) {
+                            vibrator.vibrate(vibrationPattern, indexInPatternToRepeat);
+                            startRecording();
                         }
                     }
-
-                    Long shakeDiff= (now - lastShake); // 1000000;
-
-                    // in milliseconds
-                    // recording for 2 seconds
-                    if (shakeDiff > 3000 && recording) {
-                        recording = false;
-                        //
-                        listener.finalizeSampleMessage(null);
-                    }
-
-                    if (recording) {
-                        listener.onShaking(x, y, z, now, lastShake);
-                    }
-
-                    lastX = x;
-                    lastY = y;
-                    lastZ = z;
-                    lastUpdate = now;
-
-                } else {
-                    //Toast.makeText(context, "No Motion detected", Toast.LENGTH_SHORT).show();
-                    //Log.w("Debug", "No Motion detected");
-
                 }
 
-                //listener.onAccelerationChanged(x, y, z, now);
+                /**
+                 * recording for 2 seconds
+                 *
+                 */
+                if (recording) {
+                    listener.onShaking(x,y,z,now);
+                    recordingCounter++;
 
+                    if(recordingCounter > 80) {
+                        stopRecording();
+                    }
+                }
+
+                // put in history
+                sampleMessage.insertValues(x,y,z);
             }
-// trigger change event
         }
+
+        private void startRecording() {
+
+            recording = true;
+            sampleMessage.setMessageId(now);
+            sampleMessage.setClientId();
+        }
+
+        private void stopRecording() {
+            recording = false;
+            recordingCounter = 0;
+
+            Log.wtf("stopRecording()", sampleMessage.toString());
+
+            listener.finalizeSampleMessage(sampleMessage.toString());
+        }
+
+
     };
+
 }

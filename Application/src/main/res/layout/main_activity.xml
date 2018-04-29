@@ -176,7 +176,7 @@
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart"
             android:layout_width="327dp"
-            android:layout_height="134dp"
+            android:layout_height="200dp"
             android:layout_marginStart="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/messageId" />

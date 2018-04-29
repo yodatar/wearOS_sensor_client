@@ -34,6 +34,7 @@ import com.google.android.gms.wearable.MessageClient;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
+import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
@@ -53,6 +54,7 @@ import java.util.concurrent.ScheduledFuture;
 import sk.wearClient.helpers.SampleMessage;
 import sk.wearClient.helpers.ChartHelper;
 import sk.wearClient.helpers.MqttHelper;
+import sk.wearClient.helpers.SampleMessageSimple;
 
 
 public class MainActivity extends Activity implements
@@ -63,11 +65,7 @@ public class MainActivity extends Activity implements
 
     private static final String TAG = "MainActivity";
 
-    private static final int REQUEST_IMAGE_CAPTURE = 1;
-
-    private static final String START_ACTIVITY_PATH = "/start-activity";
-    private static final String COUNT_PATH = "/count";
-    private static final String COUNT_KEY = "count";
+    private static final String START_ACTIVITY = "/start-activity";
 
     private ListView mDataItemList;
 
@@ -78,10 +76,6 @@ public class MainActivity extends Activity implements
     // Send DataItems.
     private ScheduledExecutorService mGeneratorExecutor;
     private ScheduledFuture<?> mDataItemGeneratorFuture;
-
-
-
-
 
 
     MqttHelper mqttHelper;
@@ -102,8 +96,6 @@ public class MainActivity extends Activity implements
     EditText clientId;
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-
 
 
     @Override
@@ -137,7 +129,7 @@ public class MainActivity extends Activity implements
         sampleRateSeek = (SeekBar) findViewById(R.id.sampleRateSeek);
         thresholdSeek = (SeekBar) findViewById(R.id.thresholdSeek);
 
-        sampleMessage = new SampleMessage();
+        sampleMessage = SampleMessage.getInstance();
 
         mqttToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -253,16 +245,6 @@ public class MainActivity extends Activity implements
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         Log.w(TAG, "onDataChanged: " + dataEvents);
-
-        /*for (DataEvent event : dataEvents) {
-            if (event.getType() == DataEvent.TYPE_CHANGED) {
-                mDataItemListAdapter.add(
-                        new Event("DataItem Changed", event.getDataItem().toString()));
-            } else if (event.getType() == DataEvent.TYPE_DELETED) {
-                mDataItemListAdapter.add(
-                        new Event("DataItem Deleted", event.getDataItem().toString()));
-            }
-        }*/
     }
 
     @Override
@@ -314,7 +296,7 @@ public class MainActivity extends Activity implements
     private void sendStartActivityMessage(String node) {
 
         Task<Integer> sendMessageTask =
-                Wearable.getMessageClient(this).sendMessage(node, START_ACTIVITY_PATH, new byte[0]);
+                Wearable.getMessageClient(this).sendMessage(node, START_ACTIVITY, new byte[0]);
 
         try {
             // Block on a task and get the result synchronously (because this is on a background
@@ -330,28 +312,6 @@ public class MainActivity extends Activity implements
         }
     }
 
-
-
-/*
-private void sendPhoto(Asset asset) {
-
-        PutDataMapRequest dataMap = PutDataMapRequest.create(IMAGE_PATH);
-        dataMap.getDataMap().putAsset(IMAGE_KEY, asset);
-        dataMap.getDataMap().putLong("time", new Date().getTime());
-        PutDataRequest request = dataMap.asPutDataRequest();
-        request.setUrgent();
-
-        Task<DataItem> dataItemTask = Wearable.getDataClient(this).putDataItem(request);
-
-        dataItemTask.addOnSuccessListener(new OnSuccessListener<DataItem>() {
-            @Override
-            public void onSuccess(DataItem dataItem) {
-                Log.w(TAG, "Sending image was successful: " + dataItem);
-            }
-        });
-
-    }
-*/
     @WorkerThread
     private Collection<String> getNodes() {
         HashSet<String> results = new HashSet<>();
@@ -446,73 +406,38 @@ private void sendPhoto(Asset asset) {
         }
     }
 
-    /**
-     * Generates a DataItem based on an incrementing count.
-     */
-  /*  private class DataItemGenerator implements Runnable {
-
-        private int count = 0;
-
-        @Override
-        public void run() {
-            PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(COUNT_PATH);
-            putDataMapRequest.getDataMap().putInt(COUNT_KEY, count++);
-
-            PutDataRequest request = putDataMapRequest.asPutDataRequest();
-            request.setUrgent();
-
-            Log.w(TAG, "Generating DataItem: " + request);
-
-            Task<DataItem> dataItemTask =
-                    Wearable.getDataClient(getApplicationContext()).putDataItem(request);
-
-            try {
-                // Block on a task and get the result synchronously (because this is on a background
-                // thread).
-                DataItem dataItem = Tasks.await(dataItemTask);
-
-                Log.w(TAG, "DataItem saved: " + dataItem);
-
-            } catch (ExecutionException exception) {
-                Log.e(TAG, "Task failed: " + exception);
-
-            } catch (InterruptedException exception) {
-                Log.e(TAG, "Interrupt occurred: " + exception);
-            }
-        }
-    }*/
-
-
 
 
     @Override
     public void onAccelerationChanged(float x, float y, float z, long time) {
-        /*
-        Date timestamp = new Date(time/1000000);
-        float[] record = {x,y,z};
-        mChart.addEntryToChart(record, timestamp);
-        */
     }
 
-    public void onShaking(float x, float y, float z, long time, long messageId) {
-        Date timestamp = new Date(time);
-
-        mChart.addEntryToChart(x,y,z, timestamp);
-
-        // TODO: create separate helper
-        sampleMessage.setValues(x,y,z, time, messageId, clientId.getText().toString());
+    public void onShaking(float x, float y, float z, long time) {
+        mChart.addEntryToChart(x,y,z, new Date(time));
     }
 
     public void finalizeSampleMessage(String msg) {
+
         if (mqttHelper != null && mqttHelper.mqttAndroidClient.isConnected()) {
             // publish sample
             if(msg != null) {
+                /**
+                 * Show in graph
+                 */
+                Gson g = new Gson();
+                SampleMessageSimple s = g.fromJson(msg, SampleMessageSimple.class );
+                Log.wtf("SampleMessageSimple ", s.toString());
+
+                for (int i=1;i<100;i++) {
+                    mChart.addEntryToChart(s.x[i],s.y[i],s.z[i],new Date());
+                }
+
                 mqttHelper.publishMessage(msg, null);
             } else {
-                mqttHelper.publishMessage(sampleMessage.toString(), String.valueOf(sampleMessage.getId()));
+                mqttHelper.publishMessage(sampleMessage.toString(), String.valueOf(sampleMessage.getMessageId()));
 
                 // display on UI
-                messageId.setText(sdf.format(new Date(sampleMessage.getId())));
+                messageId.setText(sdf.format(new Date(sampleMessage.getMessageId())));
 
                 // flush current sample
                 sampleMessage.clear();
@@ -520,7 +445,6 @@ private void sendPhoto(Asset asset) {
 
         }
     }
-
 
 
 
@@ -555,7 +479,6 @@ private void sendPhoto(Asset asset) {
             @Override
             public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
                 Log.w("deliveryComplete", iMqttDeliveryToken.toString());
-
             }
         });
 

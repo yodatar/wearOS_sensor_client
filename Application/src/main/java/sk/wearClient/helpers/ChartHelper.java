@@ -117,7 +117,7 @@ public class ChartHelper implements OnChartValueSelectedListener {
             mChart.notifyDataSetChanged();
 
             // limit the number of visible entries
-            mChart.setVisibleXRangeMaximum(150);
+            mChart.setVisibleXRangeMaximum(300);
             // mChart.setVisibleYRange(30, AxisDependency.LEFT);
 
             // move to the latest entry
@@ -135,9 +135,8 @@ public class ChartHelper implements OnChartValueSelectedListener {
         LineDataSet set = new LineDataSet(null, "Data");
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
         set.setColor(Color.rgb(rand.nextInt(200) + 1, rand.nextInt(200) + 1, rand.nextInt(200) + 1));
-        //set.setCircleColor(Color.WHITE);
         set.setLineWidth(2f);
-        //set.setCircleRadius(4f);
+        set.setDrawCircles(false);
         set.setFillAlpha(65);
         set.setFillColor(Color.rgb(67, 164, 34));
         set.setHighLightColor(Color.rgb(67, 164, 34));

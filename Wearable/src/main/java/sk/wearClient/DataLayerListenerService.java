@@ -17,35 +17,30 @@
 package sk.wearClient;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.util.Log;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageEvent;
-import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
-import java.util.concurrent.TimeUnit;
-
-import sk.wearClient.MainActivity;
+import sk.wearClient.helpers.SampleMessage;
 
 /**
  * Listens to DataItems and Messages from the local node.
  */
 public class DataLayerListenerService extends WearableListenerService {
-
     private static final String TAG = "DataLayerService";
 
-    private static final String START_ACTIVITY_PATH = "/start-activity";
-    public static final String COUNT_PATH = "/count";
+    // default
+    public static String CLIENT_ID = "smartwatch";
+
+    //
+    public static final String START_ACTIVITY = "/start-activity";
+    public static final String SET_CLIENT_ID = "/set-client-id";
 
     @Override
     public void onCreate() {
         super.onCreate();
-
     }
 
     @Override
@@ -58,10 +53,21 @@ public class DataLayerListenerService extends WearableListenerService {
         Log.w(TAG, "onMessageReceived: " + messageEvent);
 
         // Check to see if the message is to start an activity
-        if (messageEvent.getPath().equals(START_ACTIVITY_PATH)) {
+        if (messageEvent.getPath().equals(START_ACTIVITY)) {
             Intent startIntent = new Intent(this, MainActivity.class);
             startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(startIntent);
+        }
+
+        // Renaming node
+        if (messageEvent.getPath().equals(SET_CLIENT_ID)) {
+            Log.d(TAG, "Data Changed for SET_CLIENT_ID");
+
+            try {
+                SampleMessage.CLIENT_ID = messageEvent.getData().toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

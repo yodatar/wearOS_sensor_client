@@ -26,6 +26,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.wearable.view.DotsPageIndicator;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
@@ -52,6 +53,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import sk.wearClient.fragments.AssetFragment;
 import sk.wearClient.fragments.DataFragment;
@@ -66,25 +68,24 @@ public class MainActivity extends Activity implements
 
     private static final String TAG = "MainActivity";
     private static final String CAPABILITY_1_NAME = "capability_1";
-    private static final String CAPABILITY_2_NAME = "capability_2";
-    private static final String DATA_ITEM_RECEIVED_PATH = "/data-item-received";
+    private static final String DATA_SEND = "/data-send";
 
     private GridViewPager mPager;
     private sk.wearClient.fragments.DataFragment mDataFragment;
-    private AssetFragment mAssetFragment;
+    private static AssetFragment mAssetFragment;
     private DiscoveryFragment discoveryFragment;
 
-    GoogleApiClient mGoogleApiClient;
-    private SensorManager sensorManager;
-    private List<Sensor> sensors;
-    private SensorEventListener listener;
-    private Sensor sensor;
-    private HashSet<Node> nodes;
-    private Node node;
-    boolean isCaptured = false;
-    private SampleMessage sampleMessage;
 
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    public static AssetFragment getmAssetFragment() {
+        return mAssetFragment;
+    }
+
+    private static GoogleApiClient mGoogleApiClient;
+    private HashSet<Node> nodes;
+    private static Node node;
+
+    static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private AccelerometerManager accelerometerManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -93,45 +94,27 @@ public class MainActivity extends Activity implements
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setupViews();
 
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        sampleMessage = new SampleMessage();
-
-        //write out to the log all the sensors the device has.
-        sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
-        if (sensors.size() < 1) {
-            Toast.makeText(this, "No sensors returned from getSensorList", Toast.LENGTH_SHORT).show();
-            Log.wtf(TAG,"No sensors returned from getSensorList");
-        }
-        Sensor[] sensorArray = sensors.toArray(new Sensor[sensors.size()]);
-        for (int i = 0; i < sensorArray.length; i++) {
-            Log.d(TAG,"Found sensor " + i + " " + sensorArray[i].toString());
-        }
-
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
         mGoogleApiClient.connect();
 
+        accelerometerManager = new AccelerometerManager();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-
-        // Instantiates clients without member variables, as clients are inexpensive to create and
-        // won't lose their listeners. (They are cached and shared between GoogleApi instances.)
         Wearable.getDataClient(this).addListener(this);
         Wearable.getMessageClient(this).addListener(this);
         Wearable.getCapabilityClient(this)
                 .addListener(
                         this, Uri.parse("wear://"), CapabilityClient.FILTER_REACHABLE);
 
-        registerSensor();
+        accelerometerManager.registerSensor(this);
 
         findNodes();
-
     }
 
     @Override
@@ -142,46 +125,33 @@ public class MainActivity extends Activity implements
         Wearable.getMessageClient(this).removeListener(this);
         Wearable.getCapabilityClient(this).removeListener(this);
 
-        unregisterSensor();
+        accelerometerManager.unregisterSensor();
     }
 
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         Log.d(TAG, "onDataChanged(): " + dataEvents);
 
-    /*    if (!mGoogleApiClient.isConnected() || !mGoogleApiClient.isConnecting()) {
-            ConnectionResult connectionResult = mGoogleApiClient
-                    .blockingConnect(30, TimeUnit.SECONDS);
-            if (!connectionResult.isSuccess()) {
-                Log.e(TAG, "DataLayerListenerService failed to connect to GoogleApiClient, "
-                        + "error code: " + connectionResult.getErrorCode());
-                return;
-            }
-        }*/
-
-
+        // loop through events received
         for (DataEvent event : dataEvents) {
+
+            // TYPE_CHANGED
             if (event.getType() == DataEvent.TYPE_CHANGED) {
+
                 String path = event.getDataItem().getUri().getPath();
 
-             if (DataLayerListenerService.COUNT_PATH.equals(path)) {
-                    Log.d(TAG, "Data Changed for COUNT_PATH");
-                    mDataFragment.appendItem("DataItem Changed", event.getDataItem().toString());
-
+             if (DataLayerListenerService.SET_CLIENT_ID.equals(path)) {
                     /*
                     byte[] payload = event.getDataItem().getUri().toString().getBytes();
 
                     if(node != null) {
-                        Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH, payload);
+                        Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_SEND, payload);
                     }
                     */
 
                 } else {
                     Log.d(TAG, "Unrecognized path: " + path);
                 }
-
-            } else if (event.getType() == DataEvent.TYPE_DELETED) {
-                mDataFragment.appendItem("DataItem Deleted", event.getDataItem().toString());
             } else {
                 mDataFragment.appendItem("Unknown data event type", "Type = " + event.getType());
             }
@@ -225,10 +195,11 @@ public class MainActivity extends Activity implements
 
     private void setNode(HashSet<Node> nodes) {
         for (Node node : nodes) {
-            this.node = node;
+            Log.wtf("node", node.getDisplayName());
+
+            MainActivity.node = node;
         }
     }
-
 
     private void setupViews() {
         mPager = (GridViewPager) findViewById(R.id.pager);
@@ -245,27 +216,25 @@ public class MainActivity extends Activity implements
         pages.add(discoveryFragment);
         final MyPagerAdapter adapter = new MyPagerAdapter(getFragmentManager(), pages);
         mPager.setAdapter(adapter);
-
     }
 
+    public static void sendSample(String payload, Long messageId) {
+        Log.wtf("sendSample", sdf.format(new Date(messageId)));
 
-    private void onAccelerationChanged(float x, float y, float z, long time) {
-        /*
-        Date timestamp = new Date(time/1000000);
-        float[] record = {x,y,z};
-        mChart.addEntryToChart(record, timestamp);
-        */
+        // display on UI
+        mAssetFragment.setMessageId(sdf.format(new Date(messageId)));
+
+       sendMessage(payload);
     }
 
-    private void onShaking(float x, float y, float z, long time, long messageId) {
-        //Date timestamp = new Date(time);
+    private static void sendMessage(String payload) {
 
-        // TODO: create separate helper
-        sampleMessage.setValues(x,y,z, time, messageId, "smartwatch");
+        if(node != null) {
+            // publish sample
+            Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_SEND, payload.getBytes());
+            Log.wtf("DATA_SEND", node.getId());
+        }
     }
-
-
-
 
     private class MyPagerAdapter extends FragmentGridPagerAdapter {
 
@@ -294,171 +263,12 @@ public class MainActivity extends Activity implements
     }
 
 
-    private long now = 0;
-    private long timeDiff = 0;
-    private long lastUpdate = 0;
-    private long lastShake = 0;
-
-    private float x = 0;
-    private float y = 0;
-    private float z = 0;
-    private float lastX = 0;
-    private float lastY = 0;
-    private float lastZ = 0;
-    private float force = 0;
-
-    void registerSensor() {
-
-
-        if (sensorManager == null)
-            sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-
-        sensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
-        if(sensors.size() > 0)
-            sensor = sensors.get(0);
-
-        listener = new SensorEventListener() {
 
 
 
-            public boolean recording;
-
-            private float threshold = 5f; // accelerometer force threshold
-
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int accuracy) {
-                // I have no desire to deal with the accuracy events
-
-            }
-            @Override
-            public void onSensorChanged(SensorEvent event) {
-                //just set the values to a textview so they can be displayed.
-                if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                    String msg = " x: "+String.valueOf(event.values[0]) +
-                            "\n y: "+String.valueOf(event.values[1]) +
-                            "\n z: "+String.valueOf(event.values[2]) +
-                            "\n T: "+String.valueOf(event.timestamp);// +
-                            //"\n 3: " + String.valueOf(event.values[3]) +    //for the TYPE_ROTATION_VECTOR these 2 exist.
-                            //"\n 4: " + String.valueOf(event.values[4]);
-                    mAssetFragment.setText(msg);
 
 
-                    now = System.currentTimeMillis();
 
-                    x = event.values[0];
-                    y = event.values[1];
-                    z = event.values[2];
-
-                    // if not interesting in shake events
-                    // just remove the whole if then else block
-                    if (lastUpdate == 0) {
-                        lastUpdate = now;
-                        lastShake = now;
-                        lastX = x;
-                        lastY = y;
-                        lastZ = z;
-                    } else {
-                        timeDiff = now - lastUpdate;
-
-                        if (timeDiff > 0) {
-
-                            force = Math.abs(x + y + z - lastX - lastY - lastZ);
-
-                            // If threshold triggered
-                            if (Float.compare(force, threshold) > 0) {
-
-                                if (!recording) {
-                                    // trigger shake event
-                                    Log.w("Debug", "timeDiff: " + (now - lastShake));
-                                    lastShake = now;
-                                    recording = true;
-                                    mAssetFragment.setBackground(Color.GREEN);
-
-                                } else {
-                                    //Toast.makeText(context, "No Motion detected",Toast.LENGTH_SHORT).show();
-                                }
-                            }
-
-                            Long shakeDiff= (now - lastShake); // 1000000;
-
-                            // in milliseconds
-                            // recording for 2 seconds
-                            if (shakeDiff > 3000 && recording) {
-                                recording = false;
-                                mAssetFragment.setBackground(Color.BLACK);
-                                //
-                                finalizeSampleMessage();
-                            }
-
-                            if (recording) {
-                                onShaking(x, y, z, now, lastShake);
-                            }
-
-                            lastX = x;
-                            lastY = y;
-                            lastZ = z;
-                            lastUpdate = now;
-
-                        } else {
-                            //Toast.makeText(context, "No Motion detected", Toast.LENGTH_SHORT).show();
-                            //Log.w("Debug", "No Motion detected");
-
-                        }
-
-                        //listener.onAccelerationChanged(x, y, z, now);
-
-                    }
-                }
-            }
-
-
-            private void finalizeSampleMessage() {
-                if(node != null) {
-                    // publish sample
-                    Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), DATA_ITEM_RECEIVED_PATH,
-                            sampleMessage.toString().getBytes());
-                    // String.valueOf(sampleMessage.getId())
-
-                    Log.wtf("finalizeSampleMessage()", sampleMessage.toString());
-
-
-                    // display on UI
-                    mAssetFragment.setMessageId(sdf.format(new Date(sampleMessage.getId())));
-
-                    // flush current sample
-                    sampleMessage.clear();
-                }
-            }
-        };
-
-        // DELAY
-        sensorManager.registerListener(listener, sensor, 20000);
-
-
-/*
-        sensors = sensorManager.getSensorList(Sensor.TYPE_SIGNIFICANT_MOTION);
-        if(sensors.size() > 0)
-            mSigMotion = sensors.get(0);
-
-        final TriggerEventListener mListener = new TriggerListener() {
-            @Override
-            public void onTrigger(TriggerEvent triggerEvent) {
-                Log.wtf(TAG,"triggerEvent");
-                Log.wtf(TAG, String.valueOf(triggerEvent.values[0]));
-            }
-        };
-        mSensorManager.requestTriggerSensor(mListener, mSigMotion);
-*/
-
-    }
-    void unregisterSensor() {
-        if (sensorManager != null && listener != null) {
-            sensorManager.unregisterListener(listener);
-        }
-        //clean up and release memory.
-        sensorManager = null;
-        listener = null;
-    }
 
 
 

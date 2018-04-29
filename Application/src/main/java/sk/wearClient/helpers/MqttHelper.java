@@ -23,7 +23,7 @@ public class MqttHelper {
 
     public MqttHelper(Context context, String ipAddress, ToggleButton mqttToggle, String clientId) {
 
-        this.hostAddress = "ws://" + ipAddress + ":4000";
+        this.hostAddress = "ws://" + ipAddress + ":3001";
 
         mqttAndroidClient = new MqttAndroidClient(context, hostAddress, clientId);
 

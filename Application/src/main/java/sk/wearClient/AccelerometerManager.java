@@ -166,7 +166,7 @@ class AccelerometerManager {
                 if (!recording) {
 
                     /**
-                     *  Behold, the Algorithm!
+                     *  the Algorithm
                      */
                     if ((y < -7) && (z > -2 && z < 2) && (x > -3 && x < 3)) {
 
